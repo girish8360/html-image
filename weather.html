@@ -1,0 +1,442 @@
+ 
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Weather App</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <style>
+        body {
+            background: #e9f2f9;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 600px;
+            margin-top: 50px;
+        }
+
+        h1 {
+            color: #123b5d;
+            margin-bottom: 25px;
+            font-weight: bold;
+        }
+
+        .card {
+            background: linear-gradient(135deg, #3f87a6, #2b5876);
+            color: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .search {
+            display: flex;
+            gap: 10px;
+        }
+
+        .search input {
+            border-radius: 25px;
+            padding: 12px 20px;
+            border: none;
+        }
+
+        .search button {
+            width: 50px;
+            border: none;
+            border-radius: 50%;
+            background: white;
+            color: #2b5876;
+            cursor: pointer;
+        }
+
+        .search button:hover {
+            background: #eeeeee;
+        }
+
+        .weather {
+            display: none;
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .weather-main-icon {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+        }
+
+        .temp {
+            font-size: 55px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .description {
+            font-size: 20px;
+            text-transform: capitalize;
+        }
+
+        .city {
+            font-size: 30px;
+            font-weight: bold;
+        }
+
+        .details {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 30px;
+            gap: 20px;
+        }
+
+        .details .col {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .weather-icon {
+            font-size: 35px;
+        }
+
+        .details p {
+            margin: 0;
+            font-size: 14px;
+            text-align: left;
+        }
+
+        .error {
+            display: none;
+            color: #ffdddd;
+            background: rgba(255, 0, 0, 0.2);
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        @media (max-width: 576px) {
+            .details {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .temp {
+                font-size: 45px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1 class="text-center">WEATHER APP</h1>
+
+        <div class="card">
+
+            <!-- SEARCH -->
+            <div class="search">
+
+                <input type="text"
+                       class="form-control"
+                       placeholder="Enter city name"
+                       spellcheck="false"
+                       autocomplete="off">
+
+                <button type="button" id="searchBtn">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+
+            </div>
+
+            <!-- ERROR MESSAGE -->
+            <div class="error" id="errorMessage">
+                City not found. Please enter a valid city name.
+            </div>
+
+            <!-- WEATHER -->
+            <div class="weather">
+
+                <!-- Weather icon -->
+                <img src="" class="weather-main-icon" id="weatherIcon"
+                     alt="Weather Icon">
+
+                <h2 class="temp">--°C</h2>
+
+                <p class="description">--</p>
+
+                <h2 class="city">--</h2>
+
+                <div class="details">
+
+                    <!-- HUMIDITY -->
+                    <div class="col">
+
+                        <i class="fa-solid fa-droplet weather-icon"></i>
+
+                        <div>
+                            <p class="humidity">--%</p>
+                            <small>HUMIDITY</small>
+                        </div>
+
+                    </div>
+
+                    <!-- WIND -->
+                    <div class="col">
+
+                        <i class="fa-solid fa-wind weather-icon"></i>
+
+                        <div>
+                            <p class="wind">-- Km/H</p>
+                            <small>WIND SPEED</small>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script>
+
+        /* ==========================================
+           OPENWEATHERMAP API KEY
+        ========================================== */
+
+        const apiKey = "065cebf0392efd266714ad518e98e455";
+
+
+        /* ==========================================
+           HTML ELEMENTS
+        ========================================== */
+
+        const searchBox = document.querySelector(".search input");
+        const searchBtn = document.querySelector("#searchBtn");
+
+        const weatherBox = document.querySelector(".weather");
+        const errorMessage = document.querySelector("#errorMessage");
+
+        const weatherIcon = document.querySelector("#weatherIcon");
+
+
+        /* ==========================================
+           WEATHER FUNCTION
+        ========================================== */
+
+        async function checkWeather(city) {
+
+            // Remove unnecessary spaces
+            city = city.trim();
+
+            // Check empty input
+            if (city === "") {
+
+                errorMessage.innerHTML =
+                    "Please enter a city name.";
+
+                errorMessage.style.display = "block";
+                weatherBox.style.display = "none";
+
+                return;
+            }
+
+
+            try {
+
+                /*
+                 IMPORTANT:
+                 The city is inserted into the URL here.
+                 The API key is inserted using backticks.
+                */
+
+                const apiUrl =
+                    `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&units=metric&appid=${apiKey}`;
+
+
+                const response = await fetch(apiUrl);
+
+
+                /*
+                 OpenWeatherMap returns an error such as
+                 404 if the city does not exist.
+                */
+
+                if (!response.ok) {
+
+                    throw new Error("City not found");
+
+                }
+
+
+                const data = await response.json();
+
+
+                console.log(data);
+
+
+                /* ==========================================
+                   DISPLAY WEATHER DATA
+                ========================================== */
+
+                document.querySelector(".city").innerHTML =
+                    data.name;
+
+
+                document.querySelector(".temp").innerHTML =
+                    Math.round(data.main.temp) + "°C";
+
+
+                document.querySelector(".humidity").innerHTML =
+                    data.main.humidity + "%";
+
+
+                document.querySelector(".wind").innerHTML =
+                    (data.wind.speed * 3.6).toFixed(1) + " Km/H";
+
+
+                document.querySelector(".description").innerHTML =
+                    data.weather[0].description;
+
+
+                /* ==========================================
+                   WEATHER ICON
+                ========================================== */
+
+                const weatherCondition =
+                    data.weather[0].main.toLowerCase();
+
+
+                if (weatherCondition === "clouds") {
+
+                    weatherIcon.src = "image/cloud.png";
+
+                }
+
+                else if (weatherCondition === "clear") {
+
+                    weatherIcon.src = "image/clear.png";
+
+                }
+
+                else if (weatherCondition === "rain") {
+
+                    weatherIcon.src = "image/rain.png";
+
+                }
+
+                else if (weatherCondition === "drizzle") {
+
+                    weatherIcon.src = "image/drizzlee.png";
+
+                }
+
+                else if (weatherCondition === "mist" ||
+                         weatherCondition === "fog" ||
+                         weatherCondition === "haze") {
+
+                    weatherIcon.src = "image/mist.png";
+
+                }
+
+                else {
+
+                    /*
+                     Default OpenWeatherMap icon
+                     */
+
+                    weatherIcon.src =
+                        `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
+
+                }
+
+
+                /* ==========================================
+                   SHOW WEATHER
+                ========================================== */
+
+                weatherBox.style.display = "block";
+
+                errorMessage.style.display = "none";
+
+            }
+
+
+            catch (error) {
+
+                console.error(error);
+
+
+                weatherBox.style.display = "none";
+
+
+                errorMessage.innerHTML =
+                    "City not found. Please enter a valid city name.";
+
+
+                errorMessage.style.display = "block";
+
+            }
+
+        }
+
+
+        /* ==========================================
+           SEARCH BUTTON
+        ========================================== */
+
+        searchBtn.addEventListener("click", function () {
+
+            checkWeather(searchBox.value);
+
+        });
+
+
+        /* ==========================================
+           PRESS ENTER TO SEARCH
+        ========================================== */
+
+        searchBox.addEventListener("keydown", function (event) {
+
+            if (event.key === "Enter") {
+
+                checkWeather(searchBox.value);
+
+            }
+
+        });
+
+
+        /* ==========================================
+           DEFAULT CITY
+        ========================================== */
+
+        window.addEventListener("load", function () {
+
+            checkWeather("Delhi");
+
+        });
+
+    </script>
+
+</body>
+
+</html>
+ 
