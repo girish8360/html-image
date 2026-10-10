@@ -347,6 +347,37 @@
         });
     </script>
 
+
+
+
+
+   <!-- SOURCE CODE PREVENTION-RIGHT CLICK DISABLE -->
+
+        <script>
+          // 1. Disable right-click context menu
+          document.addEventListener("contextmenu", function (event) {
+            event.preventDefault();
+          });
+
+          // 2. Discourage selecting visible text
+          document.addEventListener("selectstart", function (event) {
+            event.preventDefault();
+          });
+
+          // 3. Discourage common source-code shortcuts
+          document.addEventListener("keydown", function (event) {
+            const key = event.key.toLowerCase();
+
+            if (
+              event.key === "F12" ||
+              (event.ctrlKey && key === "u") ||
+              (event.ctrlKey && event.shiftKey &&
+                ["i", "j", "c"].includes(key))
+            ) {
+              event.preventDefault();
+            }
+          });
+        </script>
 </body>
 
 </html>
